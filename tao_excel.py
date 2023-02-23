@@ -17,6 +17,15 @@ excel_list: dict[str, pd.DataFrame] = {}
 def float_to_string(value):
     return str(value).split('.')[0]
 
+def float_to_string_two_digits(value):
+    return str(value).split('.')[0].zfill(2)
+
+def get_boekje(value):
+    # if value <= 12 the return BAO_(value) else return SBO_(value -12)
+    if value <= 12:
+        return f'BAO_{float_to_string_two_digits(value)}'
+    else:
+        return f'SBO_{float_to_string_two_digits(value - 12)}'
 
 # filter out rows where column 6 is nan
 excel = excel.loc[excel[excel.columns[6]].notna()]
@@ -45,14 +54,15 @@ else:
             klas_id = float_to_string(row[3])
             school_naam = row[4]
             klas_naam = row[5]
-            boekje = float_to_string(row[6])
+            boekje = row[6]
             datum_toegevoegd = row[7]
-
-            if boekje != 'nan' and boekje != str(pd.NaT) and datetime.datetime(datum_toegevoegd.year, datum_toegevoegd.month, datum_toegevoegd.day).date() >= from_data_toegevoegd:
+            
+            if not pd.isna(boekje) and boekje != pd.NaT and datetime.datetime(datum_toegevoegd.year, datum_toegevoegd.month, datum_toegevoegd.day).date() >= from_data_toegevoegd:
+                boekje = get_boekje(boekje)
                 if boekje not in excel_list:
                     excel_list[boekje] = pd.DataFrame()
                 
-                new_row = {'Label': ll_code, 'Group': klas_naam, 'Lastname': klas_naam,  'Password': ww,'Login': ll_code, 'SchoolId': school, 'ClassId': klas_id, 'Firstname': school_naam, 'Booklet': boekje}
+                new_row = {'Label': ll_code, 'Group': boekje, 'Lastname': klas_naam,  'Password': ww,'Login': ll_code, 'SchoolId': school, 'ClassId': klas_id, 'Firstname': school_naam, 'Booklet': boekje}
                 # add row to dataframe
                 new_df = pd.DataFrame(new_row, index=[0])
                 excel_list[boekje] = pd.concat([excel_list[boekje], new_df], ignore_index=True)
